@@ -431,4 +431,5 @@ ISC License
 > "The goal isn't to do everything. The goal is to do _something_ — the right something for right now."
 
 AI Butler doesn't judge. It doesn't push. It simply meets you where you are and helps you take one small step forward.
+
 # butler-service-backend
