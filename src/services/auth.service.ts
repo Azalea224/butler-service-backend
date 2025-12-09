@@ -24,11 +24,11 @@ export class AuthService {
     });
 
     // Generate token
-    const token = this.generateToken({ userId: user._id, email: user.email });
+    const token = this.generateToken({ userId: user._id.toString(), email: user.email });
 
     return {
       user: {
-        id: user._id,
+        id: user._id.toString(),
         username: user.username,
         email: user.email,
       },
@@ -52,11 +52,11 @@ export class AuthService {
     }
 
     // Generate token
-    const token = this.generateToken({ userId: user._id, email: user.email });
+    const token = this.generateToken({ userId: user._id.toString(), email: user.email });
 
     return {
       user: {
-        id: user._id,
+        id: user._id.toString(),
         username: user.username,
         email: user.email,
       },

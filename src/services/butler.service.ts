@@ -37,7 +37,7 @@ export class ButlerService {
 
     return {
       recommendation,
-      context_log_id: contextLog._id,
+      context_log_id: contextLog._id.toString(),
     };
   }
 

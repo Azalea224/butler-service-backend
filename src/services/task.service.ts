@@ -46,7 +46,7 @@ export class TaskService {
   async getOpenTasksForAI(userId: string) {
     const tasks = await Task.find({ user_id: userId, is_completed: false });
     return tasks.map((task) => ({
-      id: task._id,
+      id: task._id.toString(),
       title: task.title,
       energy_cost: task.energy_cost,
       emotional_friction: task.emotional_friction,

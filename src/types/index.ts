@@ -3,7 +3,6 @@ import { Document, Types } from "mongoose";
 
 // ============ User ============
 export interface IUser extends Document {
-  _id: string;
   username: string;
   email: string;
   password_hash: string;
@@ -17,7 +16,6 @@ export interface IUser extends Document {
 export type EmotionalFriction = "Low" | "Medium" | "High";
 
 export interface ITask extends Document {
-  _id: string;
   user_id: Types.ObjectId;
   title: string;
   energy_cost: number;
@@ -30,7 +28,6 @@ export interface ITask extends Document {
 
 // ============ Context Log ============
 export interface IContextLog extends Document {
-  _id: string;
   user_id: Types.ObjectId;
   raw_input: string;
   mood: string;
