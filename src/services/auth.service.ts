@@ -5,16 +5,23 @@ import { RegisterDTO, LoginDTO, AuthResponse, JwtPayload } from "../types";
 
 export class AuthService {
   async register(data: RegisterDTO): Promise<AuthResponse> {
-    const { email, password, name } = data;
+    const { username, email, password } = data;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
+    });
     if (existingUser) {
-      throw new Error("User already exists with this email");
+      throw new Error("User already exists with this email or username");
     }
 
-    // Create new user
-    const user = await User.create({ email, password, name });
+    // Create new user (password_hash will be hashed by pre-save hook)
+    const user = await User.create({
+      username,
+      email,
+      password_hash: password,
+      core_values: data.core_values || [],
+    });
 
     // Generate token
     const token = this.generateToken({ userId: user._id, email: user.email });
@@ -22,8 +29,8 @@ export class AuthService {
     return {
       user: {
         id: user._id,
+        username: user.username,
         email: user.email,
-        name: user.name,
       },
       token,
     };
@@ -32,8 +39,8 @@ export class AuthService {
   async login(data: LoginDTO): Promise<AuthResponse> {
     const { email, password } = data;
 
-    // Find user with password
-    const user = await User.findOne({ email }).select("+password");
+    // Find user with password_hash
+    const user = await User.findOne({ email }).select("+password_hash");
     if (!user) {
       throw new Error("Invalid email or password");
     }
@@ -50,8 +57,8 @@ export class AuthService {
     return {
       user: {
         id: user._id,
+        username: user.username,
         email: user.email,
-        name: user.name,
       },
       token,
     };
@@ -65,9 +72,11 @@ export class AuthService {
 
     return {
       id: user._id,
+      username: user.username,
       email: user.email,
-      name: user.name,
-      createdAt: user.createdAt,
+      baseline_energy: user.baseline_energy,
+      core_values: user.core_values,
+      created_at: user.created_at,
     };
   }
 

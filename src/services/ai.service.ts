@@ -8,15 +8,16 @@ export class AIService {
   async consultButler(userContext: UserContext, tasks: TaskForAI[]): Promise<string> {
     // Format tasks for the AI
     const tasksDescription = tasks.length > 0
-      ? tasks.map((task, i) => 
-          `${i + 1}. "${task.title}" - Energy: ${task.energy_cost}/10, Friction: ${task.emotional_friction}${task.associated_value ? `, Value: ${task.associated_value}` : ""}${task.description ? ` (${task.description})` : ""}`
-        ).join("\n")
+      ? tasks.map((task, i) => {
+          const dueInfo = task.due_date ? `, Due: ${new Date(task.due_date).toLocaleDateString()}` : "";
+          return `${i + 1}. "${task.title}" - Energy: ${task.energy_cost}/10, Friction: ${task.emotional_friction}${task.associated_value ? `, Value: ${task.associated_value}` : ""}${dueInfo}`;
+        }).join("\n")
       : "No pending tasks available.";
 
     // Build the prompt
     const prompt = `
 User Profile:
-- Name: ${userContext.name}
+- Username: ${userContext.username}
 - Core Values: ${userContext.core_values.length > 0 ? userContext.core_values.join(", ") : "Not specified"}
 - Baseline Energy: ${userContext.baseline_energy}/10
 
@@ -83,4 +84,3 @@ Respond in JSON format only:
 }
 
 export const aiService = new AIService();
-

@@ -112,9 +112,9 @@ POST /api/auth/register
 Content-Type: application/json
 
 {
+  "username": "johndoe",
   "email": "user@example.com",
   "password": "securepassword",
-  "name": "John Doe",
   "core_values": ["Health", "Creativity", "Family"]  // optional
 }
 ```
@@ -136,7 +136,7 @@ Content-Type: application/json
 ```json
 {
   "message": "Login successful",
-  "user": { "id": "...", "email": "...", "name": "..." },
+  "user": { "id": "...", "username": "johndoe", "email": "user@example.com" },
   "token": "eyJhbGc..."
 }
 ```
@@ -161,20 +161,20 @@ Content-Type: application/json
 
 {
   "title": "Call the dentist",
-  "description": "Schedule annual checkup",
   "energy_cost": 4,
   "emotional_friction": "High",
-  "associated_value": "Health"
+  "associated_value": "Health",
+  "due_date": "2024-01-20"
 }
 ```
 
-| Field                | Type                        | Required | Description                     |
-| -------------------- | --------------------------- | -------- | ------------------------------- |
-| `title`              | string                      | ✅       | Task name                       |
-| `description`        | string                      | ❌       | Additional details              |
-| `energy_cost`        | number (1-10)               | ✅       | Mental/physical effort required |
-| `emotional_friction` | `Low` \| `Medium` \| `High` | ✅       | Psychological resistance        |
-| `associated_value`   | string                      | ❌       | Links to user's core values     |
+| Field                | Type                        | Required | Description                       |
+| -------------------- | --------------------------- | -------- | --------------------------------- |
+| `title`              | string                      | ✅       | Task name                         |
+| `energy_cost`        | number (1-10)               | ✅       | Mental/physical effort required   |
+| `emotional_friction` | `Low` \| `Medium` \| `High` | ✅       | Psychological resistance          |
+| `associated_value`   | string                      | ❌       | Matches a value in user's profile |
+| `due_date`           | Date (ISO string)           | ❌       | Task deadline                     |
 
 #### List Tasks
 
@@ -200,7 +200,8 @@ Content-Type: application/json
 
 {
   "energy_cost": 3,
-  "emotional_friction": "Medium"
+  "emotional_friction": "Medium",
+  "due_date": "2024-01-25"
 }
 ```
 
@@ -292,19 +293,30 @@ GET /api/health
 
 ---
 
-## 📊 Data Models
+## 📊 Data Models (ERD)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              ENTITY RELATIONSHIPS                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   USER ||--o{ TASK : "owns"                                                │
+│   USER ||--o{ CONTEXT_LOG : "records"                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ### User
 
 ```typescript
 {
-  email: string,           // unique
-  password: string,        // hashed
-  name: string,
-  core_values: string[],   // e.g., ["Health", "Creativity"]
-  baseline_energy: number, // 1-10, default: 5
-  createdAt: Date,
-  updatedAt: Date
+  _id: ObjectId,
+  username: string,              // unique
+  email: string,                 // unique
+  password_hash: string,         // hashed
+  baseline_energy: number,       // 1-10, default: 5
+  core_values: string[],         // e.g., ["Health", "Creativity"]
+  created_at: Date
 }
 ```
 
@@ -312,15 +324,15 @@ GET /api/health
 
 ```typescript
 {
+  _id: ObjectId,
+  user_id: ObjectId,             // FK → User
   title: string,
-  description?: string,
-  energy_cost: number,              // 1-10
+  energy_cost: number,           // 1-10
   emotional_friction: "Low" | "Medium" | "High",
-  associated_value?: string,        // links to user's core_values
+  associated_value?: string,     // matches a value in User.core_values
   is_completed: boolean,
-  user: ObjectId,                   // ref to User
-  createdAt: Date,
-  updatedAt: Date
+  due_date?: Date,
+  created_at: Date
 }
 ```
 
@@ -328,14 +340,12 @@ GET /api/health
 
 ```typescript
 {
-  user: ObjectId,                   // ref to User
-  raw_input: string,
-  mood: string,
-  current_energy: number,           // 1-10
-  ai_response?: string,
-  recommended_task?: ObjectId,      // ref to Task
-  createdAt: Date,
-  updatedAt: Date
+  _id: ObjectId,
+  user_id: ObjectId,             // FK → User
+  raw_input: string,             // user's brain dump text
+  mood: string,                  // extracted emotion
+  current_energy: number,        // 1-10
+  timestamp: Date
 }
 ```
 

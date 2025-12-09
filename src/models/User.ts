@@ -4,6 +4,13 @@ import { IUser } from "../types";
 
 const userSchema = new Schema<IUser>(
   {
+    username: {
+      type: String,
+      required: [true, "Username is required"],
+      unique: true,
+      trim: true,
+      minlength: [3, "Username must be at least 3 characters"],
+    },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -11,21 +18,11 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
-    password: {
+    password_hash: {
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
       select: false,
-    },
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-      trim: true,
-    },
-    // AI Butler specific fields
-    core_values: {
-      type: [String],
-      default: [],
     },
     baseline_energy: {
       type: Number,
@@ -33,20 +30,24 @@ const userSchema = new Schema<IUser>(
       min: 1,
       max: 10,
     },
+    core_values: {
+      type: [String],
+      default: [],
+    },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: "created_at", updatedAt: false },
   }
 );
 
 // Hash password before saving
 userSchema.pre("save", function () {
-  if (!this.isModified("password")) return;
+  if (!this.isModified("password_hash")) return;
 
   // Simple hash using crypto (for production, use bcrypt)
-  this.password = crypto
+  this.password_hash = crypto
     .createHash("sha256")
-    .update(this.password)
+    .update(this.password_hash)
     .digest("hex");
 });
 
@@ -58,7 +59,7 @@ userSchema.methods.comparePassword = function (
     .createHash("sha256")
     .update(candidatePassword)
     .digest("hex");
-  return this.password === hashedCandidate;
+  return this.password_hash === hashedCandidate;
 };
 
 export const User = mongoose.model<IUser>("User", userSchema);

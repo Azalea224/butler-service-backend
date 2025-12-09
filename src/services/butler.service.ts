@@ -14,7 +14,7 @@ export class ButlerService {
 
     // Build user context for AI
     const userContext: UserContext = {
-      name: user.name,
+      username: user.username,
       core_values: user.core_values,
       baseline_energy: user.baseline_energy,
       current_mood: data.current_mood,
@@ -29,11 +29,10 @@ export class ButlerService {
 
     // Log this consultation
     const contextLog = await ContextLog.create({
-      user: userId,
+      user_id: userId,
       raw_input: data.raw_input || `Mood: ${data.current_mood}, Energy: ${data.current_energy}`,
       mood: data.current_mood,
       current_energy: data.current_energy,
-      ai_response: recommendation,
     });
 
     return {
@@ -43,10 +42,9 @@ export class ButlerService {
   }
 
   async getHistory(userId: string, limit = 10) {
-    return ContextLog.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .populate("recommended_task", "title");
+    return ContextLog.find({ user_id: userId })
+      .sort({ timestamp: -1 })
+      .limit(limit);
   }
 
   async updateUserProfile(userId: string, updates: { core_values?: string[]; baseline_energy?: number }) {
@@ -60,7 +58,7 @@ export class ButlerService {
     }
     return {
       id: user._id,
-      name: user.name,
+      username: user.username,
       email: user.email,
       core_values: user.core_values,
       baseline_energy: user.baseline_energy,
@@ -69,4 +67,3 @@ export class ButlerService {
 }
 
 export const butlerService = new ButlerService();
-

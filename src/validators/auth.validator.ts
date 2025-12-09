@@ -5,8 +5,14 @@ export const validateRegister = (
   res: Response,
   next: NextFunction
 ): void => {
-  const { email, password, name } = req.body;
+  const { username, email, password } = req.body;
   const errors: string[] = [];
+
+  if (!username || typeof username !== "string") {
+    errors.push("Username is required");
+  } else if (username.trim().length < 3) {
+    errors.push("Username must be at least 3 characters");
+  }
 
   if (!email || typeof email !== "string") {
     errors.push("Email is required");
@@ -18,12 +24,6 @@ export const validateRegister = (
     errors.push("Password is required");
   } else if (password.length < 6) {
     errors.push("Password must be at least 6 characters");
-  }
-
-  if (!name || typeof name !== "string") {
-    errors.push("Name is required");
-  } else if (name.trim().length < 2) {
-    errors.push("Name must be at least 2 characters");
   }
 
   if (errors.length > 0) {
@@ -57,4 +57,3 @@ export const validateLogin = (
 
   next();
 };
-
