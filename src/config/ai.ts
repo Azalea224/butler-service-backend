@@ -12,7 +12,7 @@ export const genAI = new GoogleGenAI({
 });
 
 // Model configuration
-export const AI_MODEL = "gemini-3-pro-preview";
+export const AI_MODEL = "gemini-2.5-flash";
 
 // System instruction for the AI Butler
 export const BUTLER_SYSTEM_INSTRUCTION = `You are a compassionate, non-judgmental Butler designed to help people with Executive Dysfunction. 
