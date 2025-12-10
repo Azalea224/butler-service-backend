@@ -11,6 +11,7 @@ const startServer = async () => {
     app.listen(env.PORT, () => {
       console.log(`🚀 Server running on http://localhost:${env.PORT}`);
       console.log(`📍 Environment: ${env.NODE_ENV}`);
+      console.log(`🤖 Gemini AI: ${env.GEMINI_API_KEY ? "✅ Configured" : "❌ NOT CONFIGURED"}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);

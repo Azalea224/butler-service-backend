@@ -1,13 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 import { env } from "./env";
 
+// Validate API key at startup
+if (!env.GEMINI_API_KEY) {
+  console.warn("⚠️  WARNING: GEMINI_API_KEY is not set. AI features will not work.");
+}
+
 // Initialize Google Generative AI client
 export const genAI = new GoogleGenAI({
   apiKey: env.GEMINI_API_KEY,
 });
 
 // Model configuration
-export const AI_MODEL = "gemini-2.5-flash-preview-05-20";
+export const AI_MODEL = "gemini-3-pro-preview";
 
 // System instruction for the AI Butler
 export const BUTLER_SYSTEM_INSTRUCTION = `You are a compassionate, non-judgmental Butler designed to help people with Executive Dysfunction. 

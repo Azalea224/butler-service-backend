@@ -1,5 +1,6 @@
 import { genAI, AI_MODEL, BUTLER_SYSTEM_INSTRUCTION } from "../config/ai";
 import { UserContext, TaskForAI } from "../types";
+import { env } from "../config/env";
 
 export class AIService {
   /**
@@ -30,6 +31,12 @@ ${tasksDescription}
 
 Based on this information, what ONE task should they focus on right now?`;
 
+    // Check if API key is configured
+    if (!env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not configured");
+      throw new Error("AI service is not configured. Please contact support.");
+    }
+
     try {
       const response = await genAI.models.generateContent({
         model: AI_MODEL,
@@ -42,8 +49,25 @@ Based on this information, what ONE task should they focus on right now?`;
       });
 
       return response.text || "I'm having trouble thinking right now. Perhaps take a moment to breathe, and we can try again.";
-    } catch (error) {
-      console.error("AI Service Error:", error);
+    } catch (error: any) {
+      console.error("AI Service Error:", {
+        message: error?.message,
+        status: error?.status,
+        statusText: error?.statusText,
+        details: error?.response?.data || error?.cause || error,
+      });
+      
+      // Provide more specific error messages
+      if (error?.status === 401 || error?.message?.includes("API key")) {
+        throw new Error("AI authentication failed. Please check API key configuration.");
+      }
+      if (error?.status === 429) {
+        throw new Error("AI service rate limited. Please try again in a moment.");
+      }
+      if (error?.status === 404 || error?.message?.includes("model")) {
+        throw new Error("AI model not available. Please contact support.");
+      }
+      
       throw new Error("Failed to consult the Butler. Please try again.");
     }
   }
