@@ -1,0 +1,58 @@
+# ===========================================
+# Butler Service Backend - Docker Compose
+# ===========================================
+# Usage:
+#   docker-compose up -d          # Start services
+#   docker-compose down           # Stop services
+#   docker-compose logs -f app    # View app logs
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: butler-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017/butler-service
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - butler-network
+
+  mongo:
+    image: mongo:7
+    container_name: butler-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - butler-network
+    # Uncomment to expose MongoDB port externally (for debugging)
+    # ports:
+    #   - "27017:27017"
+
+networks:
+  butler-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
+
