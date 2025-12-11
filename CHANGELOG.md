@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.2.0] - 2024-12-11
+## [1.2.0] - 2025-12-11
 
 ### Added
 
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2024-12-11
+## [1.1.0] - 2025-12-11
 
 ### Added
 
@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.1] - 2024-12-11
+## [1.0.1] - 2025-12-11
 
 ### Added
 
@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2024-12-10
+## [1.0.0] - 2025-12-10
 
 ### Added
 
@@ -126,8 +126,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Highlights |
 | ------- | ---- | ---------- |
-| 1.2.0 | 2024-12-11 | Direct chat with Simi |
-| 1.1.0 | 2024-12-11 | Mood logging, structured AI responses |
-| 1.0.1 | 2024-12-11 | Docker deployment, error handling |
-| 1.0.0 | 2024-12-10 | Initial release |
+| 1.2.0 | 2025-12-11 | Direct chat with Simi |
+| 1.1.0 | 2025-12-11 | Mood logging, structured AI responses |
+| 1.0.1 | 2025-12-11 | Docker deployment, error handling |
+| 1.0.0 | 2025-12-10 | Initial release |
 
