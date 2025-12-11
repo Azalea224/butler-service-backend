@@ -157,3 +157,16 @@ export interface SendMessageDTO {
 export interface ChatResponse {
   response: string;
 }
+
+// ============ Magic Parser Types ============
+export interface ParsedTask {
+  title: string;
+  energy_cost: number;
+  emotional_friction: EmotionalFriction;
+  due_date: string | null;
+  associated_value: string | null;
+}
+
+export interface MagicParseDTO {
+  text: string;
+}

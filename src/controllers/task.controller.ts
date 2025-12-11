@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { taskService } from "../services/task.service";
+import { aiService } from "../services/ai.service";
 import { AuthRequest } from "../types";
 
 export class TaskController {
@@ -116,6 +117,38 @@ export class TaskController {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to complete task";
       res.status(400).json({ message });
+    }
+  }
+
+  /**
+   * Magic Parse - Convert natural language to structured task
+   * 
+   * Frontend Integration:
+   * 1. User speaks -> STT generates text.
+   * 2. Frontend sends text to /api/tasks/magic-parse.
+   * 3. Frontend receives JSON with parsed task fields.
+   * 4. Frontend pre-fills the "Add Task" modal fields with this data for user confirmation.
+   */
+  async magicParse(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: "Not authenticated" });
+        return;
+      }
+
+      const { text } = req.body;
+
+      if (!text || typeof text !== "string" || text.trim().length === 0) {
+        res.status(400).json({ message: "Text is required" });
+        return;
+      }
+
+      const parsedTask = await aiService.parseTaskInput(text.trim());
+
+      res.status(200).json(parsedTask);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to parse task";
+      res.status(500).json({ message });
     }
   }
 }

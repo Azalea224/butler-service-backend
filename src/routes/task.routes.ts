@@ -7,6 +7,16 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
+// POST /api/tasks/magic-parse - Parse natural language into task structure
+// Frontend Integration:
+// 1. User speaks -> STT generates text.
+// 2. Frontend sends text to /api/tasks/magic-parse.
+// 3. Frontend receives JSON with parsed task fields.
+// 4. Frontend pre-fills the "Add Task" modal fields with this data for user confirmation.
+router.post("/magic-parse", (req, res) => {
+  taskController.magicParse(req, res);
+});
+
 // POST /api/tasks - Create a new task
 router.post("/", (req, res) => {
   taskController.create(req, res);

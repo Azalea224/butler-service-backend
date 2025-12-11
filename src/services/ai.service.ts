@@ -1,5 +1,5 @@
 import { genAI, AI_MODEL, BUTLER_SYSTEM_INSTRUCTION } from "../config/ai";
-import { UserContext, TaskForAI, ButlerResponse, ChatMessage, ChatContext } from "../types";
+import { UserContext, TaskForAI, ButlerResponse, ChatMessage, ChatContext, ParsedTask } from "../types";
 import { env } from "../config/env";
 
 export class AIService {
@@ -165,6 +165,126 @@ You do not need to push tasks unless they ask. Be a good listener. Keep response
       
       throw new Error("Failed to chat with Simi. Please try again.");
     }
+  }
+
+  /**
+   * Magic Parser - Extract structured task from natural language
+   * 
+   * Frontend Integration:
+   * 1. User speaks -> STT generates text.
+   * 2. Frontend sends text to /api/tasks/magic-parse.
+   * 3. Frontend receives JSON with parsed task fields.
+   * 4. Frontend pre-fills the "Add Task" modal fields with this data for user confirmation.
+   */
+  async parseTaskInput(rawText: string): Promise<ParsedTask> {
+    // Check if API key is configured
+    if (!env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not configured");
+      throw new Error("AI service is not configured. Please contact support.");
+    }
+
+    const today = new Date();
+    const systemInstruction = `You are a data extraction assistant. Your job is to extract task details from a user's spoken sentence.
+
+TODAY'S DATE: ${today.toISOString().split('T')[0]} (use this to calculate relative dates like "tomorrow", "next week", etc.)
+
+OUTPUT FORMAT: JSON only, no markdown, no code fences.
+{
+  "title": "The core task name (clean, concise)",
+  "energy_cost": Number (1-10, default 5 if not specified. 'Hard'/'difficult' = 8, 'Easy'/'quick' = 2, 'exhausting' = 9),
+  "emotional_friction": String ('Low', 'Medium', 'High'. Default 'Medium'. 'I hate this'/'dreading' = 'High', 'fun'/'excited' = 'Low'),
+  "due_date": ISO date string or null (Extract relative time like 'tomorrow', 'next Friday', 'in 3 days' to full ISO date),
+  "associated_value": String or null (Guess the category: Health, Work, Finance, Family, Cleanliness, Social, Personal, Creativity)
+}
+
+EXAMPLES:
+Input: "Do the taxes on Friday I really hate it"
+Output: {"title":"Do taxes","energy_cost":8,"emotional_friction":"High","due_date":"2025-01-17T00:00:00.000Z","associated_value":"Finance"}
+
+Input: "Buy milk"
+Output: {"title":"Buy milk","energy_cost":2,"emotional_friction":"Low","due_date":null,"associated_value":"Health"}
+
+Input: "Call mom tomorrow, been putting it off"
+Output: {"title":"Call mom","energy_cost":3,"emotional_friction":"Medium","due_date":"2025-01-14T00:00:00.000Z","associated_value":"Family"}
+
+Input: "Need to clean my room this weekend it's so hard to start"
+Output: {"title":"Clean room","energy_cost":6,"emotional_friction":"High","due_date":"2025-01-18T00:00:00.000Z","associated_value":"Cleanliness"}`;
+
+    const prompt = `Extract task details from this input. Return valid JSON only.\n\nInput: "${rawText}"`;
+
+    try {
+      const response = await genAI.models.generateContent({
+        model: AI_MODEL,
+        contents: prompt,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.3, // Lower temperature for more consistent extraction
+          maxOutputTokens: 300,
+        },
+      });
+
+      const text = response.text || "";
+      
+      // Parse JSON response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          
+          // Validate and normalize the response
+          return {
+            title: parsed.title || rawText.slice(0, 50),
+            energy_cost: this.clamp(parsed.energy_cost ?? 5, 1, 10),
+            emotional_friction: this.validateFriction(parsed.emotional_friction),
+            due_date: parsed.due_date || null,
+            associated_value: parsed.associated_value || null,
+          };
+        } catch (parseError) {
+          console.error("Failed to parse magic parse response as JSON:", text);
+        }
+      }
+
+      // Fallback: return basic parsed task
+      return {
+        title: rawText.slice(0, 50),
+        energy_cost: 5,
+        emotional_friction: "Medium",
+        due_date: null,
+        associated_value: null,
+      };
+    } catch (error: any) {
+      console.error("AI Magic Parse Error:", {
+        message: error?.message,
+        status: error?.status,
+        details: error?.response?.data || error?.cause || error,
+      });
+      
+      if (error?.status === 401 || error?.message?.includes("API key")) {
+        throw new Error("AI authentication failed. Please check API key configuration.");
+      }
+      if (error?.status === 429) {
+        throw new Error("AI service rate limited. Please try again in a moment.");
+      }
+      
+      throw new Error("Failed to parse task. Please try again.");
+    }
+  }
+
+  /**
+   * Helper to clamp a number between min and max
+   */
+  private clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, Math.round(value)));
+  }
+
+  /**
+   * Helper to validate emotional friction value
+   */
+  private validateFriction(value: string): "Low" | "Medium" | "High" {
+    const normalized = String(value).toLowerCase();
+    if (normalized === "low") return "Low";
+    if (normalized === "high") return "High";
+    return "Medium";
   }
 
   /**
