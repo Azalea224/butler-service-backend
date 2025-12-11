@@ -7,7 +7,12 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// POST /api/butler/consult - Get AI task recommendation
+// POST /api/butler/log-mood - Log mood without triggering AI
+router.post("/log-mood", (req, res) => {
+  butlerController.logMood(req, res);
+});
+
+// POST /api/butler/consult - Get AI task recommendation (reads recent mood logs)
 router.post("/consult", (req, res) => {
   butlerController.consult(req, res);
 });

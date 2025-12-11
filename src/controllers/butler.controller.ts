@@ -3,6 +3,50 @@ import { butlerService } from "../services/butler.service";
 import { AuthRequest } from "../types";
 
 export class ButlerController {
+  /**
+   * Log mood without triggering AI consultation
+   */
+  async logMood(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: "Not authenticated" });
+        return;
+      }
+
+      const { mood, energy_level, raw_input } = req.body;
+
+      // Validate required fields
+      if (!mood || energy_level === undefined) {
+        res.status(400).json({
+          message: "Missing required fields: mood and energy_level",
+        });
+        return;
+      }
+
+      // Validate energy range
+      if (energy_level < 1 || energy_level > 10) {
+        res.status(400).json({
+          message: "energy_level must be between 1 and 10",
+        });
+        return;
+      }
+
+      const result = await butlerService.logMood(req.user.userId, {
+        mood,
+        energy_level,
+        raw_input,
+      });
+
+      res.status(201).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to log mood";
+      res.status(500).json({ message });
+    }
+  }
+
+  /**
+   * Consult AI Butler - fetches recent mood logs automatically
+   */
   async consult(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -10,28 +54,10 @@ export class ButlerController {
         return;
       }
 
-      const { current_mood, current_energy, raw_input } = req.body;
-
-      // Validate required fields
-      if (!current_mood || current_energy === undefined) {
-        res.status(400).json({
-          message: "Missing required fields: current_mood and current_energy",
-        });
-        return;
-      }
-
-      // Validate energy range
-      if (current_energy < 1 || current_energy > 10) {
-        res.status(400).json({
-          message: "current_energy must be between 1 and 10",
-        });
-        return;
-      }
+      const { user_message } = req.body;
 
       const result = await butlerService.consult(req.user.userId, {
-        current_mood,
-        current_energy,
-        raw_input,
+        user_message,
       });
 
       res.status(200).json(result);

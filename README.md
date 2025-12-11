@@ -6,12 +6,18 @@
 
 AI Butler is an intelligent backend service that understands your emotional state and energy levels to recommend the _right_ task at the _right_ time. Instead of overwhelming you with a todo list, it gently suggests **one task** that matches your current capacity.
 
+Meet **Simi** — your AI Butler who:
+- Tracks your mood and energy over time
+- Recommends tasks based on your current state
+- Chats with you as a supportive friend
+- Never judges or pressures you
+
 ### How It Works
 
-1. **You check in** — Share your current mood and energy level (1-10)
-2. **Butler analyzes** — AI considers your tasks' difficulty, emotional friction, and your personal values
-3. **One recommendation** — Receive a single, gentle suggestion tailored to your state
-4. **History tracked** — All consultations are logged to understand patterns over time
+1. **Log your mood** — Share your current mood and energy level (1-10)
+2. **Consult Simi** — Ask for a task recommendation when you're ready
+3. **Get one task** — Receive a single, gentle suggestion with a micro-step to start
+4. **Chat anytime** — Talk to Simi for support without task pressure
 
 ---
 
@@ -24,6 +30,7 @@ AI Butler is an intelligent backend service that understands your emotional stat
 | **MongoDB**       | Database (via Mongoose)           |
 | **Google Gemini** | AI intelligence (`@google/genai`) |
 | **JWT**           | Authentication                    |
+| **Docker**        | Containerized deployment          |
 
 ---
 
@@ -45,6 +52,16 @@ cp .env.example .env
 npm run dev
 ```
 
+### Docker Deployment
+
+```bash
+# Build and start with Docker Compose
+docker compose up -d --build
+
+# View logs
+docker compose logs -f app
+```
+
 ---
 
 ## ⚙️ Environment Variables
@@ -57,7 +74,7 @@ PORT=3000
 NODE_ENV=development
 
 # MongoDB
-MONGODB_URI=mongodb://localhost:27017/twins
+MONGODB_URI=mongodb://localhost:27017/butler-service
 
 # JWT Authentication
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
@@ -223,7 +240,38 @@ Authorization: Bearer <token>
 
 ### 🤵 Butler Endpoints
 
-#### Consult the Butler ⭐
+#### Log Mood (without AI)
+
+```http
+POST /api/butler/log-mood
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "mood": "anxious",
+  "energy_level": 3,
+  "raw_input": "feeling stuck today"
+}
+```
+
+| Field          | Type          | Required | Description                        |
+| -------------- | ------------- | -------- | ---------------------------------- |
+| `mood`         | string        | ✅       | How you're feeling right now       |
+| `energy_level` | number (1-10) | ✅       | Your energy level                  |
+| `raw_input`    | string        | ❌       | Free-form expression of your state |
+
+**Response (201):**
+
+```json
+{
+  "message": "Mood logged successfully",
+  "log_id": "507f1f77bcf86cd799439011"
+}
+```
+
+#### Consult Simi ⭐
+
+Get a task recommendation. Simi automatically reads your last 3 mood logs.
 
 ```http
 POST /api/butler/consult
@@ -231,28 +279,26 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "current_mood": "overwhelmed",
-  "current_energy": 3,
-  "raw_input": "I feel stuck and don't know where to start"
+  "user_message": "I don't know where to start"
 }
 ```
 
-| Field            | Type          | Required | Description                        |
-| ---------------- | ------------- | -------- | ---------------------------------- |
-| `current_mood`   | string        | ✅       | How you're feeling right now       |
-| `current_energy` | number (1-10) | ✅       | Your energy level                  |
-| `raw_input`      | string        | ❌       | Free-form expression of your state |
+| Field          | Type   | Required | Description                     |
+| -------------- | ------ | -------- | ------------------------------- |
+| `user_message` | string | ❌       | Optional message to provide context |
 
 **Response:**
 
 ```json
 {
-  "recommendation": "I hear you — feeling stuck is exhausting. With your energy at 3, let's start tiny. I suggest \"Reply to one email\" — it's low friction and will give you a small win. You've got this. 💙",
-  "context_log_id": "507f1f77bcf86cd799439011"
+  "empathy_statement": "I can see you're feeling overwhelmed right now.",
+  "chosen_task_id": "507f1f77bcf86cd799439012",
+  "reasoning": "This task has low friction and matches your current energy level.",
+  "micro_step": "Open your laptop and find the document."
 }
 ```
 
-#### Get Consultation History
+#### Get Mood History
 
 ```http
 GET /api/butler/history
@@ -270,6 +316,66 @@ Content-Type: application/json
 {
   "core_values": ["Health", "Career", "Relationships"],
   "baseline_energy": 6
+}
+```
+
+---
+
+### 💬 Chat Endpoints
+
+Free-form conversation with Simi. Context-aware but not task-focused.
+
+#### Send Message
+
+```http
+POST /api/chat/message
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "message": "I'm feeling overwhelmed today"
+}
+```
+
+**Response:**
+
+```json
+{
+  "response": "I hear you. It sounds like a lot right now. Want to talk about it?"
+}
+```
+
+#### Get Chat History
+
+```http
+GET /api/chat/history
+GET /api/chat/history?limit=20
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "history": [
+    { "role": "user", "message": "Hi Simi" },
+    { "role": "assistant", "message": "Hey! How are you feeling today?" }
+  ]
+}
+```
+
+#### Clear Chat History
+
+```http
+DELETE /api/chat/history
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "message": "Chat history cleared"
 }
 ```
 
@@ -293,7 +399,7 @@ GET /api/health
 
 ---
 
-## 📊 Data Models (ERD)
+## 📊 Data Models
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -301,7 +407,8 @@ GET /api/health
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   USER ||--o{ TASK : "owns"                                                │
-│   USER ||--o{ CONTEXT_LOG : "records"                                      │
+│   USER ||--o{ CONTEXT_LOG : "records moods"                                │
+│   USER ||--o{ CHAT_LOG : "chats"                                           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -349,6 +456,19 @@ GET /api/health
 }
 ```
 
+### ChatLog
+
+```typescript
+{
+  _id: ObjectId,
+  user_id: ObjectId,             // FK → User
+  role: "user" | "assistant",    // who sent the message
+  message: string,               // message content
+  session_id?: string,           // optional conversation grouping
+  timestamp: Date
+}
+```
+
 ---
 
 ## 📁 Project Structure
@@ -356,28 +476,32 @@ GET /api/health
 ```
 src/
 ├── config/
-│   ├── ai.ts              # Gemini client & system instructions
+│   ├── ai.ts              # Gemini client & Simi system instructions
 │   ├── db.ts              # MongoDB connection
 │   └── env.ts             # Environment variables
 ├── controllers/
 │   ├── auth.controller.ts
 │   ├── butler.controller.ts
+│   ├── chat.controller.ts
 │   └── task.controller.ts
 ├── middlewares/
 │   └── auth.middleware.ts # JWT verification
 ├── models/
-│   ├── ContextLog.ts      # Consultation history
+│   ├── ChatLog.ts         # Chat conversation history
+│   ├── ContextLog.ts      # Mood logs
 │   ├── Task.ts
 │   └── User.ts
 ├── routes/
 │   ├── auth.routes.ts
 │   ├── butler.routes.ts
+│   ├── chat.routes.ts
 │   ├── index.ts
 │   └── task.routes.ts
 ├── services/
 │   ├── ai.service.ts      # Gemini API interactions
 │   ├── auth.service.ts
-│   ├── butler.service.ts  # Orchestration layer
+│   ├── butler.service.ts  # Task recommendation logic
+│   ├── chat.service.ts    # Free-form chat logic
 │   └── task.service.ts
 ├── types/
 │   └── index.ts           # TypeScript interfaces
@@ -389,7 +513,7 @@ src/
 
 ---
 
-## 🧠 Understanding the AI Butler
+## 🧠 Understanding Simi
 
 ### Energy Cost Scale (1-10)
 
@@ -409,14 +533,22 @@ src/
 | **Medium** | Slightly uncomfortable, minor avoidance |
 | **High**   | Anxiety-inducing, strong avoidance      |
 
-### How Recommendations Work
+### How Simi Recommends Tasks
 
-The AI Butler considers:
+Simi uses intelligent logic based on your state:
 
-1. **Current energy** — Won't suggest a 7-cost task when you're at energy level 2
-2. **Emotional friction** — Avoids high-friction tasks when mood is low
-3. **Core values** — May suggest a task aligned with values for motivation boost
-4. **Task availability** — Only considers incomplete tasks
+| Your State | Simi's Approach |
+| ---------- | --------------- |
+| Energy < 3 | Ignores high-friction tasks, suggests quick wins or rest |
+| Mood is anxious/overwhelmed | Validates feelings first, extra gentle |
+| Energy > 7 | Gently pushes toward important tasks |
+
+### Chat Mode vs Consult Mode
+
+| Mode | Purpose | Endpoint |
+| ---- | ------- | -------- |
+| **Consult** | Get a task recommendation | `POST /api/butler/consult` |
+| **Chat** | Free-form supportive conversation | `POST /api/chat/message` |
 
 ---
 
@@ -440,6 +572,4 @@ ISC License
 
 > "The goal isn't to do everything. The goal is to do _something_ — the right something for right now."
 
-AI Butler doesn't judge. It doesn't push. It simply meets you where you are and helps you take one small step forward.
-
-# butler-service-backend
+Simi doesn't judge. Simi doesn't push. Simi simply meets you where you are and helps you take one small step forward.

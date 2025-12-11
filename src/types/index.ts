@@ -35,6 +35,20 @@ export interface IContextLog extends Document {
   timestamp: Date;
 }
 
+// ============ Chat Log ============
+export interface IChatLog extends Document {
+  user_id: Types.ObjectId;
+  role: "user" | "assistant";
+  message: string;
+  session_id?: string;
+  timestamp: Date;
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  message: string;
+}
+
 // ============ JWT ============
 export interface JwtPayload {
   userId: string;
@@ -86,15 +100,28 @@ export interface UpdateTaskDTO {
 }
 
 // ============ Butler DTOs ============
-export interface ConsultButlerDTO {
-  current_mood: string;
-  current_energy: number;
+export interface LogMoodDTO {
+  mood: string;
+  energy_level: number;
   raw_input?: string;
 }
 
+export interface ConsultButlerDTO {
+  user_message?: string;
+}
+
+export interface MoodLogEntry {
+  mood: string;
+  energy_level: number;
+  raw_input?: string;
+  timestamp: Date;
+}
+
 export interface ButlerResponse {
-  recommendation: string;
-  context_log_id: string;
+  empathy_statement: string;
+  chosen_task_id: string | null;
+  reasoning: string;
+  micro_step: string;
 }
 
 // ============ AI Service Types ============
@@ -102,8 +129,8 @@ export interface UserContext {
   username: string;
   core_values: string[];
   baseline_energy: number;
-  current_mood: string;
-  current_energy: number;
+  recent_moods: MoodLogEntry[];
+  user_message?: string;
 }
 
 export interface TaskForAI {
@@ -113,4 +140,20 @@ export interface TaskForAI {
   emotional_friction: EmotionalFriction;
   associated_value?: string;
   due_date?: Date;
+}
+
+// ============ Chat Types ============
+export interface ChatContext {
+  username: string;
+  current_mood?: string;
+  current_energy?: number;
+  pending_task_count: number;
+}
+
+export interface SendMessageDTO {
+  message: string;
+}
+
+export interface ChatResponse {
+  response: string;
 }
