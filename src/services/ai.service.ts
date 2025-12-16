@@ -144,7 +144,7 @@ You do not need to push tasks unless they ask. Be a good listener. Keep response
         config: {
           systemInstruction: chatSystemInstruction,
           temperature: 0.8,
-          maxOutputTokens: 200,
+          maxOutputTokens: 500,
         },
       });
 
