@@ -52,7 +52,7 @@ Based on this information, select ONE task for the user to focus on right now. R
         config: {
           systemInstruction: BUTLER_SYSTEM_INSTRUCTION,
           temperature: 0.7,
-          maxOutputTokens: 1000,
+          maxOutputTokens: 5000,
         },
       });
 
