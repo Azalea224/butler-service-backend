@@ -58,6 +58,19 @@ Based on this information, select ONE task for the user to focus on right now. R
 
       const text = response.text || "";
       
+      // Debug logging
+      console.log("AI consultButler raw response:", text ? text.substring(0, 500) : "(empty)");
+      
+      if (!text) {
+        console.error("AI returned empty response");
+        return {
+          empathy_statement: "I'm here to help you.",
+          chosen_task_id: null,
+          reasoning: "I had trouble processing, but let's take it easy.",
+          micro_step: "Take a moment to breathe and try again.",
+        };
+      }
+      
       // Parse JSON response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -72,6 +85,8 @@ Based on this information, select ONE task for the user to focus on right now. R
         } catch (parseError) {
           console.error("Failed to parse AI response as JSON:", text);
         }
+      } else {
+        console.error("No JSON found in AI response:", text);
       }
 
       // Fallback response if parsing fails
